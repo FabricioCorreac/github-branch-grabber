@@ -1,21 +1,73 @@
+/* Lay the PR link and the button out side by side in the Development row. */
+.branch-grabber-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.branch-grabber-row > a {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Mirrors Primer's invisible IconButton (same look as the section's gear). */
 .branch-grabber-btn {
-  margin-left: 6px;
-  padding: 0 5px;
-  font-size: 12px;
-  line-height: 1.6;
-  border: 1px solid var(--color-border-default, #d0d7de);
-  border-radius: 4px;
-  background: var(--color-canvas-subtle, #f6f8fa);
-  color: var(--color-fg-default, #24292f);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 4px 0 0 4px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--borderRadius-medium, 6px);
+  background: transparent;
+  color: var(--fgColor-muted, #59636e);
   cursor: pointer;
-  vertical-align: middle;
+  transition: background-color 80ms, color 80ms;
+}
+
+/* The octicon SVG is used as a mask so it takes the button's text color. */
+.branch-grabber-btn::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  mask: url('chrome-extension://__MSG_@@extension_id__/icons/octicons/copy.svg') center / contain
+    no-repeat;
+}
+
+.branch-grabber-btn[data-state='success']::before {
+  mask-image: url('chrome-extension://__MSG_@@extension_id__/icons/octicons/check.svg');
+}
+
+.branch-grabber-btn[data-state='error']::before {
+  mask-image: url('chrome-extension://__MSG_@@extension_id__/icons/octicons/alert.svg');
 }
 
 .branch-grabber-btn:hover {
-  background: var(--color-canvas-default, #ffffff);
+  background: var(--control-transparent-bgColor-hover, rgba(129, 139, 152, 0.15));
+  color: var(--fgColor-default, #1f2328);
 }
 
-.branch-grabber-btn:disabled {
+.branch-grabber-btn:active {
+  background: var(--control-transparent-bgColor-active, rgba(129, 139, 152, 0.25));
+}
+
+.branch-grabber-btn:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline-offset: -2px;
+}
+
+.branch-grabber-btn[data-state='loading'] {
+  cursor: progress;
   opacity: 0.6;
-  cursor: default;
+}
+
+.branch-grabber-btn[data-state='success'] {
+  color: var(--fgColor-success, #1a7f37);
+}
+
+.branch-grabber-btn[data-state='error'] {
+  color: var(--fgColor-danger, #d1242f);
 }

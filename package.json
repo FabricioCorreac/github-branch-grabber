@@ -1,0 +1,12 @@
+{
+  "name": "github-branch-grabber",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Adds a button to GitHub issues to copy the branch name of the linked pull request.",
+  "scripts": {
+    "icons": "node scripts/copy-octicons.js"
+  },
+  "devDependencies": {
+    "@primer/octicons": "^19.40.0"
+  }
+}

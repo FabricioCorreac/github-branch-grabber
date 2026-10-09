@@ -1,3 +1,5 @@
+node_modules/
+
 # Packaged extension builds
 *.zip
 *.crx

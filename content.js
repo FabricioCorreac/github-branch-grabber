@@ -1,5 +1,8 @@
 (function () {
-  const PROCESSED_ATTR = 'data-branch-grabber-processed';
+  const BUTTON_CLASS = 'branch-grabber-btn';
+  const ROW_CLASS = 'branch-grabber-row';
+  const DEFAULT_LABEL = 'Copy branch name';
+
   const branchCache = new Map();
   let scanTimeout = null;
 
@@ -25,56 +28,50 @@
     const resp = await fetch(`https://github.com/${owner}/${repo}/pull/${number}`, {
       credentials: 'include',
     });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} fetching PR ${key}`);
     const html = await resp.text();
 
-    let branch = null;
+    // GitHub embeds the PR payload as JSON in the page. The key has been
+    // renamed over time (headRefName -> headBranch), so accept both.
+    const match = html.match(/"(?:headBranch|headRefName)":("(?:[^"\\]|\\.)*")/);
+    if (!match) return null;
 
-    // GitHub embeds the PR payload as JSON in the page; this survives
-    // DOM/class-name churn better than scraping rendered markup.
-    const jsonMatch = html.match(/"headRefName":"((?:[^"\\]|\\.)*)"/);
-    if (jsonMatch) {
-      branch = jsonMatch[1].replace(/\\u002F/g, '/').replace(/\\(.)/g, '$1');
-    } else {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const ref = doc.querySelector('.commit-ref .css-truncate-target[title], .commit-ref[title]');
-      if (ref) branch = ref.getAttribute('title') || ref.textContent.trim();
-    }
-
+    const branch = JSON.parse(match[1]);
     branchCache.set(key, branch);
     return branch;
+  }
+
+  // The icon for each state is drawn by content.css from data-state.
+  function setButtonState(btn, state, label) {
+    btn.dataset.state = state;
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
   }
 
   function createButton(prInfo) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'branch-grabber-btn';
-    btn.title = 'Copiar nombre de rama';
-    btn.textContent = '⎘';
+    btn.className = BUTTON_CLASS;
+    setButtonState(btn, 'idle', DEFAULT_LABEL);
 
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      btn.disabled = true;
-      const original = btn.textContent;
+      if (btn.dataset.state !== 'idle') return;
+      setButtonState(btn, 'loading', 'Looking up branch…');
       try {
         const branch = await fetchBranchName(prInfo.owner, prInfo.repo, prInfo.number);
         if (branch) {
           await navigator.clipboard.writeText(branch);
-          btn.textContent = '✓';
-          btn.title = `Copiado: ${branch}`;
+          setButtonState(btn, 'success', `Copied: ${branch}`);
         } else {
-          btn.textContent = '!';
-          btn.title = 'No se pudo encontrar la rama';
+          setButtonState(btn, 'error', 'Branch name not found');
         }
       } catch (err) {
         console.error('branch-grabber:', err);
-        btn.textContent = '!';
-        btn.title = 'Error al copiar la rama';
+        setButtonState(btn, 'error', `Could not copy branch name: ${err.message}`);
       } finally {
-        setTimeout(() => {
-          btn.textContent = original;
-          btn.disabled = false;
-        }, 1500);
+        setTimeout(() => setButtonState(btn, 'idle', DEFAULT_LABEL), 2000);
       }
     });
 
@@ -84,16 +81,22 @@
   function scanAndInject() {
     if (!isIssuePage()) return;
 
-    const sidebar = document.querySelector('#partial-discussion-sidebar') || document;
-    const anchors = sidebar.querySelectorAll('a[href*="/pull/"]');
+    const section =
+      document.querySelector('[data-testid="sidebar-development-section"]') ||
+      document.querySelector('#partial-discussion-sidebar');
+    if (!section) return;
 
-    anchors.forEach((a) => {
-      if (a.hasAttribute(PROCESSED_ATTR)) return;
+    section.querySelectorAll('a[href*="/pull/"]').forEach((a) => {
       const prInfo = getPRInfoFromHref(a.getAttribute('href'));
       if (!prInfo) return;
-      a.setAttribute(PROCESSED_ATTR, '1');
-      const btn = createButton(prInfo);
-      a.insertAdjacentElement('afterend', btn);
+
+      // React can re-render the row and drop our node, so check for the
+      // button itself rather than marking the anchor.
+      const row = a.closest('li') || a.parentElement;
+      if (row.querySelector(`.${BUTTON_CLASS}`)) return;
+
+      row.classList.add(ROW_CLASS);
+      a.insertAdjacentElement('afterend', createButton(prInfo));
     });
   }
 
