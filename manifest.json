@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Branch Grabber",
+  "version": "1.0.0",
+  "description": "Agrega un botón en los issues de GitHub para copiar el nombre de la rama del PR vinculado.",
+  "host_permissions": ["https://github.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
