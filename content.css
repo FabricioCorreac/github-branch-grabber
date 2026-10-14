@@ -1,12 +1,9 @@
-/* Lay the PR link and the button out side by side in the Development row. */
+/* Puts the button to the right of the PR/branch link. Rows can have more
+   links below it (e.g. the PR's release), which wrap under the first one. */
 .branch-grabber-row {
-  display: flex;
-  align-items: flex-start;
-}
-
-.branch-grabber-row > a {
-  flex: 1 1 auto;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
 }
 
 /* Mirrors Primer's invisible IconButton (same look as the section's gear). */
